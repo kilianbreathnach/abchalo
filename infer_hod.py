@@ -12,7 +12,7 @@ from halotools.sim_manager import supported_sims
 clustpar = True
 abcpar = False
 
-model = Zheng07()
+model = Zheng07(threshold = -20.5)
 cat = supported_sims.HaloCatalog()
 L = cat.Lbox
 rbins = model_defaults.default_rbins
