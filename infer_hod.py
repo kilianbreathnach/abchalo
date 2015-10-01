@@ -27,9 +27,11 @@ zhengcorr = np.array([1.40637527e+03, 6.72135032e+02, 3.07970325e+02,
                       3.81631202e-01, 1.91124983e-01])
 
 if clustpar:
-    clustN = cpu_count()
+    clustN = cpu_count() - 2
 else:
     clustN = 1
+
+print "done initialising!"
 
 
 def dist(dat, mod):
@@ -78,6 +80,8 @@ if abcpar:
 
 else:
     sampler = abcpmc.Sampler(N=10, Y=data, postfn=prediction, dist=dist)
+
+print "Now start sampling!"
 
 for pool in sampler.sample(prior, eps):
     print("T: {0}, eps: {1:>.4f}, ratio: {2:>.4f}".format(pool.t, pool.eps, pool.ratio))
