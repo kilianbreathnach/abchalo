@@ -25,9 +25,11 @@ def prediction(params):
     model.param_dict['logMmin'] = params[3]
     model.param_dict['sigma_logM'] = params[4]
 
-    model.populate_mock()
-
-    nbar = model.mock.number_density
+    try:
+        model.populate_mock()
+        nbar = model.mock.number_density
+    except:
+        nbar = 0
 
     return nbar
 
@@ -43,14 +45,14 @@ priormaxs = np.array([1.26, 13.2, 15.5, 14.2, 0.5])
 
 prior = abcpmc.TophatPrior(priormins, priormaxs)
 
-eps = abcpmc.ExponentialEps(4,
+eps = abcpmc.ExponentialEps(20,
                             1e-6,
-                            1e-9)
+                            1e-15)
 
 mpi_pool = mpi_util.MpiPool()
-sampler = abcpmc.Sampler(N=50, Y=data, postfn=prediction,
+sampler = abcpmc.Sampler(N=100, Y=data, postfn=prediction,
                          dist=dist, pool=mpi_pool)
-abcpmc.Sampler.particle_proposal_kwargs = {'k':12}
+abcpmc.Sampler.particle_proposal_kwargs = {'k':15}
 sampler.particle_proposal_cls = abcpmc.KNNParticleProposal
 
 if mpi_pool.isMaster():
@@ -60,9 +62,10 @@ if mpi_pool.isMaster():
 
 for pool in sampler.sample(prior, eps):
     eps.eps = mpi_util.mpiBCast(pool.eps)
-    print("T: {0}, eps: {1:>.4f},\
-           ratio: {2:>.4f}".format(pool.t, pool.eps,
-                                   pool.ratio))
+    if mpi_pool.isMaster():
+        print("T: {0}, eps: {1:>.4f},\
+               ratio: {2:>.4f}".format(pool.t, pool.eps,
+                                       pool.ratio))
     for i, (mean, std) in enumerate(zip(np.mean(pool.thetas, axis=0), np.std(pool.thetas, axis=0))):
         if mpi_pool.isMaster():
             print(u"    theta[{0}]: mu = {1:>.4f},   sig = {2:>.4f}".format(i, mean,std))
